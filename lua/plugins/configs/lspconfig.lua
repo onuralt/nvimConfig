@@ -40,29 +40,36 @@ M.capabilities.textDocument.completion.completionItem = {
   },
 }
 
-require("lspconfig").lua_ls.setup {
-  on_init = M.on_init,
-  on_attach = M.on_attach,
-  capabilities = M.capabilities,
+local lspconfig = require "lspconfig"
+-- lua language server was renamed from sumneko_lua to lua_ls in newer
+-- versions of nvim-lspconfig. fall back to the old name if needed.
+local lua_server = lspconfig.lua_ls or lspconfig.sumneko_lua
 
-  settings = {
-    Lua = {
-      diagnostics = {
-        globals = { "vim" },
-      },
-      workspace = {
-        library = {
-          [vim.fn.expand "$VIMRUNTIME/lua"] = true,
-          [vim.fn.expand "$VIMRUNTIME/lua/vim/lsp"] = true,
-          [vim.fn.stdpath "data" .. "/lazy/ui/nvchad_types"] = true,
-          [vim.fn.stdpath "data" .. "/lazy/lazy.nvim/lua/lazy"] = true,
+if lua_server then
+  lua_server.setup {
+    on_init = M.on_init,
+    on_attach = M.on_attach,
+    capabilities = M.capabilities,
+
+    settings = {
+      Lua = {
+        diagnostics = {
+          globals = { "vim" },
         },
-        maxPreload = 100000,
-        preloadFileSize = 10000,
+        workspace = {
+          library = {
+            [vim.fn.expand "$VIMRUNTIME/lua"] = true,
+            [vim.fn.expand "$VIMRUNTIME/lua/vim/lsp"] = true,
+            [vim.fn.stdpath "data" .. "/lazy/ui/nvchad_types"] = true,
+            [vim.fn.stdpath "data" .. "/lazy/lazy.nvim/lua/lazy"] = true,
+          },
+          maxPreload = 100000,
+          preloadFileSize = 10000,
+        },
       },
     },
-  },
-}
+  }
+end
 
 -- configure Ruff (Python linter) via LSP
 if require("lspconfig.configs")["ruff"] == nil then
