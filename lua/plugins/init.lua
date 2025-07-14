@@ -128,6 +128,17 @@ local default_plugins = {
     end,
   },
 
+  {
+    "nvimtools/none-ls.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    opts = function()
+      return require "plugins.configs.null_ls"
+    end,
+    config = function(_, opts)
+      require("null-ls").setup(opts)
+    end,
+  },
+
   -- load luasnips + cmp related in insert mode only
   {
     "hrsh7th/nvim-cmp",
@@ -271,4 +282,3 @@ if #config.plugins > 0 then
 end
 
 require("lazy").setup(default_plugins, config.lazy_nvim)
-

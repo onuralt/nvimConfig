@@ -64,4 +64,24 @@ require("lspconfig").lua_ls.setup {
   },
 }
 
+local lspconfig = require "lspconfig"
+
+-- configure Ruff (Python linter) via LSP
+if not lspconfig.ruff then
+  lspconfig.configs.ruff = {
+    default_config = {
+      cmd = { "ruff-lsp" },
+      filetypes = { "python" },
+      root_dir = require("lspconfig.util").find_git_ancestor,
+      settings = {},
+    },
+  }
+end
+
+lspconfig.ruff.setup {
+  on_init = M.on_init,
+  on_attach = M.on_attach,
+  capabilities = M.capabilities,
+}
+
 return M
