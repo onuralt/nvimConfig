@@ -3,6 +3,7 @@ require "nvchad.lsp"
 
 local M = {}
 local utils = require "core.utils"
+local cmp_nvim_lsp = require "cmp_nvim_lsp"
 
 -- export on_attach & capabilities for custom lspconfigs
 M.on_attach = function(client, bufnr)
@@ -20,25 +21,7 @@ M.on_init = function(client, _)
   end
 end
 
-M.capabilities = vim.lsp.protocol.make_client_capabilities()
-
-M.capabilities.textDocument.completion.completionItem = {
-  documentationFormat = { "markdown", "plaintext" },
-  snippetSupport = true,
-  preselectSupport = true,
-  insertReplaceSupport = true,
-  labelDetailsSupport = true,
-  deprecatedSupport = true,
-  commitCharactersSupport = true,
-  tagSupport = { valueSet = { 1 } },
-  resolveSupport = {
-    properties = {
-      "documentation",
-      "detail",
-      "additionalTextEdits",
-    },
-  },
-}
+M.capabilities = cmp_nvim_lsp.default_capabilities()
 
 local lspconfig = require "lspconfig"
 -- lua language server was renamed from sumneko_lua to lua_ls in newer
