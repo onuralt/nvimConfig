@@ -232,6 +232,23 @@ local default_plugins = {
     end,
   },
 
+  {
+    "lervag/vimtex",
+    ft = "tex",
+    config = function()
+      require("plugins.configs.vimtex").setup()
+    end,
+  },
+
+  {
+    "scalameta/nvim-metals",
+    ft = { "scala", "sbt", "java" },
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("plugins.configs.metals").config()
+    end,
+  },
+
   -- Only load whichkey after all the gui
   {
     "folke/which-key.nvim",
