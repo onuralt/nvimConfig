@@ -3,6 +3,7 @@ local options = {
     "lua-language-server",
     "texlab",
     "metals",
+    "ruff-lsp",
   }, -- not an option from mason.nvim
 
   PATH = "skip",
