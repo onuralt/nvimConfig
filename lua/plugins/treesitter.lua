@@ -28,6 +28,7 @@ function M.setup()
       "javascript",
       "scala",
       "regex",
+      "verilog", -- Verilog/SystemVerilog parser
     },
     highlight = {
       enable = true,

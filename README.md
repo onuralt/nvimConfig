@@ -151,6 +151,22 @@ Leader is space (`<leader> = <space>`). The following are defined by this config
 - `\\ll`: Compile
 - `\\lv`: View (Zathura)
 
+## Verilog / SystemVerilog
+
+- Syntax: Tree-sitter parser `verilog` is enabled. Install/update with `:TSUpdate verilog`.
+- Formatting: Conform uses `verible-verilog-format` (formats on save). Default flags: `--indentation_spaces 2`.
+- Tools: Install the formatter via Mason (`:Mason` → install "verible" or `:MasonToolsInstall verible`).
+- Override flags (optional):
+
+```lua
+-- e.g. in init.lua or lua/custom/*.lua
+vim.g.verible_format_args = { "--indentation_spaces", "2", "--column_limit", "120" }
+```
+
+- Verify:
+  - `:ConformInfo` in a `.sv`/`.v` buffer should list `verible`.
+  - `:TSModuleInfo` should show the `verilog` parser active.
+
 ## Troubleshooting
 
 - Ensure an internet connection for first-time plugin installation

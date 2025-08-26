@@ -17,6 +17,9 @@ function M.setup()
       c = { "clang_format" },
       cpp = { "clang_format" },
       python = { "isort", "black" },
+      -- HDL
+      systemverilog = { "verible" },
+      verilog = { "verible" },
 
       -- Web: prefer prettierd only (no warning about missing 'prettier')
       javascript = { "prettierd" },
@@ -38,6 +41,16 @@ function M.setup()
     -- Optional per-formatter tweaks
     formatters = {
       shfmt = { prepend_args = { "-i", "2", "-bn", "-ci" } },
+      -- Use verible-verilog-format for (System)Verilog via stdin
+      verible = function()
+        -- Allow user override via `vim.g.verible_format_args`
+        local args = vim.g.verible_format_args or { "--indentation_spaces", "2" }
+        return {
+          command = "verible-verilog-format",
+          stdin = true,
+          prepend_args = args,
+        }
+      end,
     },
   }
 end

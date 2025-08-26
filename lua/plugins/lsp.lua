@@ -34,6 +34,7 @@ function M.setup()
       "isort",
       "prettierd",
       "shfmt",
+      "verible",
       -- Linters
       "ruff",
       -- DAP
