@@ -166,6 +166,8 @@ require("lazy").setup({
   { "windwp/nvim-autopairs", event = "InsertEnter", config = true },
   { "lewis6991/gitsigns.nvim", config = true },
   { "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
+  -- Safe buffer deletion to avoid closing windows/tabs on close actions
+  { "famiu/bufdelete.nvim", lazy = true },
 
   ---------------------------------------------------------------------------
   -- STEP 2: Dev features
@@ -262,6 +264,50 @@ require("lazy").setup({
 
   -- Diagnostics UI
   { "folke/trouble.nvim", opts = { use_diagnostic_signs = true } },
+
+  ---------------------------------------------------------------------------
+  -- FEDA extras (added without changing existing behavior or keymaps)
+  ---------------------------------------------------------------------------
+  -- FZF-powered picker (alongside Telescope); no keymaps
+  { "ibhagwan/fzf-lua", cmd = "FzfLua", dependencies = { "nvim-tree/nvim-web-devicons" } },
+
+  -- Flash: jump/motion enhancements; no default mappings configured
+  { "folke/flash.nvim", event = "VeryLazy", opts = {} },
+
+  -- Project-wide find/replace; exposes :GrugFar
+  { "MagicDuck/grug-far.nvim", cmd = "GrugFar", opts = {} },
+
+  -- TODO/FIXME highlighting + commands; no keymaps
+  { "folke/todo-comments.nvim", dependencies = { "nvim-lua/plenary.nvim" }, opts = {} },
+
+  -- Additional editing utilities from 'mini.'
+  -- NOTE: mini.pairs disabled to avoid conflict with nvim-autopairs
+  { "echasnovski/mini.pairs", enabled = false },
+  -- Disable default surround mappings to avoid altering keybinds
+  {
+    "echasnovski/mini.surround",
+    version = false,
+    opts = { mappings = { add = "", delete = "", replace = "", find = "", find_left = "", highlight = "", update_n_lines = "", suffix_last = "", suffix_next = "" } },
+  },
+  -- Textobjects improvements (no keymaps defined by default)
+  { "echasnovski/mini.ai", version = false, config = function() require("mini.ai").setup() end },
+
+  -- Treesitter extras
+  { "nvim-treesitter/nvim-treesitter-textobjects", dependencies = { "nvim-treesitter/nvim-treesitter" } },
+  { "windwp/nvim-ts-autotag", dependencies = { "nvim-treesitter/nvim-treesitter" } },
+
+  -- Sessions and buffer scoping (no keymaps)
+  { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
+  { "tiagovla/scope.nvim", opts = {} },
+
+  -- Tmux pane navigation integration; no keymaps set
+  { "alexghergh/nvim-tmux-navigation", opts = { disable_when_zoomed = true } },
+
+  -- Tree-sitter-powered commenting; add but keep disabled to avoid replacing Comment.nvim
+  { "folke/ts-comments.nvim", enabled = false },
+
+  -- Alternative completion engine; add but keep disabled to avoid conflicts with nvim-cmp
+  { "saghen/blink.cmp", enabled = false },
 }, {
   ui = { border = "rounded" },
   change_detection = { notify = false },

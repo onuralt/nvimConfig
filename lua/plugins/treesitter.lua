@@ -46,6 +46,8 @@ function M.setup()
         node_decremental = "grm",
       },
     },
+    -- Enable auto-tagging for HTML/JSX/etc. (safe, no keymaps)
+    autotag = { enable = true },
   }
 end
 

@@ -32,7 +32,22 @@ function M.setup_bufferline()
     options = {
       diagnostics = "nvim_lsp",
       always_show_bufferline = true,
-      show_buffer_close_icons = false,
+      show_buffer_close_icons = true,
+      -- Use bufdelete to close buffers without killing the window/tab or Neovim
+      close_command = function(n)
+        local ok, bd = pcall(require, "bufdelete")
+        if ok then bd.bufdelete(n, true) else vim.cmd("bdelete! " .. n) end
+      end,
+      right_mouse_command = function(n)
+        local ok, bd = pcall(require, "bufdelete")
+        if ok then bd.bufdelete(n, true) else vim.cmd("bdelete! " .. n) end
+      end,
+      middle_mouse_command = function(n)
+        local ok, bd = pcall(require, "bufdelete")
+        if ok then bd.bufdelete(n, true) else vim.cmd("bdelete! " .. n) end
+      end,
+      -- keep the global close icon default behavior
+      -- show_close_icon = true,
       separator_style = "slant",
     },
   })
