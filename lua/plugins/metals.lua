@@ -11,16 +11,40 @@ function M.setup()
   end
 
   metals_config.init_options.statusBarProvider = "on"
+  -- Explicitly tell Metals we support debugging via nvim-dap
+  metals_config.init_options.debuggingProvider = true
   metals_config.settings = {
     showImplicitArguments = true,
     showInferredType = true,
+    -- Show the modern test UI provided by Metals
+    testUserInterface = "Test Explorer",
     -- scalafmt runs via Metals (ensure .scalafmt.conf in repos)
   }
 
-  -- DAP integration
+  -- Optionally pin Metals server version via env var METALS_VERSION
+  local pinned = vim.env.METALS_VERSION
+  if pinned and pinned ~= "" then
+    metals_config.settings.serverVersion = pinned
+  end
+
+  -- Set up DAP before Metals initializes so Doctor detects it
+  pcall(metals.setup_dap)
+
+  -- DAP-related per-buffer tweaks
   metals_config.on_attach = function(client, bufnr)
-    -- Reuse LSP keymaps from general on_attach via commands if desired.
-    -- Metals provides its own commands for test/debug.
+
+    -- Optional: format on save using Metals (requires .scalafmt.conf)
+    local grp = vim.api.nvim_create_augroup("metals-format", { clear = false })
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      group = grp,
+      buffer = bufnr,
+      callback = function()
+        if vim.lsp.buf.format then
+          vim.lsp.buf.format { async = false, bufnr = bufnr }
+        end
+      end,
+      desc = "Format Scala/SBT via Metals on save",
+    })
   end
   metals_config.tvp = { icons = { enabled = true } }
 
