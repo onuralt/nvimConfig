@@ -29,6 +29,7 @@ function M.setup()
       "scala",
       "regex",
       "verilog", -- Verilog/SystemVerilog parser
+      "vhdl",    -- VHDL parser
     },
     highlight = {
       enable = true,

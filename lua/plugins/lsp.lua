@@ -1,56 +1,89 @@
 local M = {}
 
 function M.setup()
-  local lspconfig = require "lspconfig"
-  local mason = require "mason"
-  local mason_lspconfig = require "mason-lspconfig"
-  local mason_tool_installer = require "mason-tool-installer"
+  -- Only enable Mason components if we can write to stdpath('state') (avoids log write errors in sandbox)
+  local can_use_mason = false
+  do
+    local ok = pcall(function()
+      local state = vim.fn.stdpath('state')
+      local test = state .. "/nvim_mason_perm_test"
+      local f = io.open(test, "w")
+      if f then f:close(); os.remove(test) end
+    end)
+    can_use_mason = ok
+  end
 
-  -- Mason: use a single, explicit registry (no duplicate warning)
-  mason.setup {
-    registries = { "github:mason-org/mason-registry" },
-  }
+  local mason, mason_tool_installer
+  if can_use_mason then
+    mason = require "mason"
+    mason_tool_installer = require "mason-tool-installer"
 
-  mason_lspconfig.setup()
+    -- Mason: use a single, explicit registry (no duplicate warning)
+    mason.setup {
+      registries = { "github:mason-org/mason-registry" },
+    }
 
-  -- Do NOT auto-install ltex-ls (install it manually once via :MasonInstall ltex-ls)
-  mason_tool_installer.setup {
-    ensure_installed = {
-      -- LSPs
-      "lua-language-server",
-      "clangd",
-      "pyright",
-      "texlab",
-      "bash-language-server",
-      "json-lsp",
-      "yaml-language-server",
-      "marksman",
-      "taplo",
-      "cmake-language-server",
-      -- Formatters
-      "stylua",
-      "clang-format",
-      "black",
-      "isort",
-      "prettierd",
-      "shfmt",
-      "verible",
-      -- Linters
-      "ruff",
-      -- DAP
-      "debugpy",
-      "codelldb",
-    },
-    auto_update = false,
-    run_on_start = false, -- don't block startup on flaky downloads
-    start_delay = 3000,
-  }
+    -- Do NOT auto-install ltex-ls (install it manually once via :MasonInstall ltex-ls)
+    mason_tool_installer.setup {
+      ensure_installed = {
+        -- LSPs
+        "lua-language-server",
+        "clangd",
+        "pyright",
+        "texlab",
+        "bash-language-server",
+        "json-lsp",
+        "yaml-language-server",
+        "marksman",
+        "taplo",
+        "cmake-language-server",
+        "vhdl_ls",
+        -- Formatters
+        "stylua",
+        "clang-format",
+        "black",
+        "isort",
+        "prettierd",
+        "shfmt",
+        "verible",
+        -- Linters
+        "ruff",
+        -- DAP
+        "debugpy",
+        "codelldb",
+      },
+      auto_update = false,
+      run_on_start = false, -- don't block startup on flaky downloads
+      start_delay = 3000,
+    }
+  else
+    vim.schedule(function()
+      vim.notify("Skipping Mason setup (state dir not writable).", vim.log.levels.WARN)
+    end)
+  end
 
   -- nvim-cmp capabilities
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   local ok_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
   if ok_cmp then
     capabilities = cmp_nvim_lsp.default_capabilities(capabilities)
+  end
+
+  -- Helper to setup a server (prefer built-in API; fallback to lspconfig)
+  local function setup_server(name, opts)
+    -- Prefer the new built-in API first to avoid deprecation warnings
+    if vim.lsp and vim.lsp.config then
+      if opts and next(opts) ~= nil then
+        vim.lsp.config(name, opts)
+      end
+      return vim.lsp.enable(name)
+    end
+    -- Fallback for older Neovim: use nvim-lspconfig if available
+    local ok_lspconfig, lspconfig = pcall(require, "lspconfig")
+    if ok_lspconfig and lspconfig[name] and type(lspconfig[name].setup) == "function" then
+      return lspconfig[name].setup(opts)
+    end
+    -- Silently skip if no known API is available
   end
 
   -- On attach: keymaps
@@ -84,7 +117,7 @@ function M.setup()
   if ok_neodev then
     neodev.setup {}
   end
-  lspconfig.lua_ls.setup {
+  setup_server("lua_ls", {
     capabilities = capabilities,
     on_attach = on_attach,
     settings = {
@@ -94,17 +127,17 @@ function M.setup()
         telemetry = { enable = false },
       },
     },
-  }
+  })
 
   -- C/C++
-  lspconfig.clangd.setup {
+  setup_server("clangd", {
     capabilities = capabilities,
     on_attach = on_attach,
     cmd = { "clangd", "--background-index", "--clang-tidy", "--header-insertion=iwyu" },
-  }
+  })
 
   -- Python
-  lspconfig.pyright.setup {
+  setup_server("pyright", {
     capabilities = capabilities,
     on_attach = on_attach,
     settings = {
@@ -112,10 +145,10 @@ function M.setup()
         analysis = { typeCheckingMode = "basic", autoImportCompletions = true },
       },
     },
-  }
+  })
 
   -- LaTeX
-  lspconfig.texlab.setup {
+  setup_server("texlab", {
     capabilities = capabilities,
     on_attach = on_attach,
     settings = {
@@ -124,11 +157,11 @@ function M.setup()
         forwardSearch = { executable = "okular", args = { "--unique", "file:@pdf#src:@line@tex" } },
       },
     },
-  }
+  })
 
   -- Grammar/spell: LTeX (start only if installed)
   if vim.fn.exepath "ltex-ls" ~= "" then
-    lspconfig.ltex.setup {
+    setup_server("ltex", {
       capabilities = capabilities,
       on_attach = on_attach,
       filetypes = { "tex", "bib", "markdown", "plaintex" },
@@ -139,16 +172,34 @@ function M.setup()
           checkFrequency = "save",
         },
       },
-    }
+    })
   end
 
   -- Bash / JSON / YAML / Markdown / TOML / CMake
-  lspconfig.bashls.setup { capabilities = capabilities, on_attach = on_attach }
-  lspconfig.jsonls.setup { capabilities = capabilities, on_attach = on_attach }
-  lspconfig.yamlls.setup { capabilities = capabilities, on_attach = on_attach }
-  lspconfig.marksman.setup { capabilities = capabilities, on_attach = on_attach }
-  lspconfig.taplo.setup { capabilities = capabilities, on_attach = on_attach }
-  lspconfig.cmake.setup { capabilities = capabilities, on_attach = on_attach }
+  setup_server("bashls", { capabilities = capabilities, on_attach = on_attach })
+  setup_server("jsonls", { capabilities = capabilities, on_attach = on_attach })
+  setup_server("yamlls", { capabilities = capabilities, on_attach = on_attach })
+  setup_server("marksman", { capabilities = capabilities, on_attach = on_attach })
+  setup_server("taplo", { capabilities = capabilities, on_attach = on_attach })
+  setup_server("cmake", { capabilities = capabilities, on_attach = on_attach })
+
+  -- VHDL (GHDL vhdl_ls). Start only if binary is available.
+  do
+    local has_exec = (vim.fn.executable("vhdl_ls") == 1)
+    if has_exec then
+      setup_server("vhdl_ls", {
+        capabilities = capabilities,
+        on_attach = on_attach,
+      })
+    else
+      vim.schedule(function()
+        vim.notify(
+          "VHDL LSP (vhdl_ls) not found. Install system-wide and ensure it is on PATH.",
+          vim.log.levels.WARN
+        )
+      end)
+    end
+  end
 end
 
 return M

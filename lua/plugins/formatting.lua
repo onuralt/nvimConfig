@@ -9,6 +9,11 @@ function M.setup()
       if ok and stats and stats.size > max then
         return nil
       end
+      local ft = vim.bo[bufnr].filetype
+      -- For VHDL, only format if a formatter is available (no LSP fallback)
+      if ft == "vhdl" then
+        return { lsp_fallback = false, timeout_ms = 4000 }
+      end
       return { lsp_fallback = true, timeout_ms = 2000 }
     end,
 
@@ -20,6 +25,8 @@ function M.setup()
       -- HDL
       systemverilog = { "verible" },
       verilog = { "verible" },
+      -- VHDL: use vhdl-style-guide (vsg) if a config is present
+      vhdl = { "vsg" },
 
       -- Web: prefer prettierd only (no warning about missing 'prettier')
       javascript = { "prettierd" },
@@ -49,6 +56,28 @@ function M.setup()
           command = "verible-verilog-format",
           stdin = true,
           prepend_args = args,
+        }
+      end,
+
+      -- VHDL Style Guide formatter integration
+      -- Prefer single-file fix to avoid requiring a project config.
+      vsg = function(ctx)
+        if vim.fn.executable("vsg") ~= 1 then return nil end
+        local args = { "--fix" }
+        -- If a config exists, include it
+        local cfg = vim.fs.find({ "vsg.yml", "vsg.yaml", ".vsg.yml", ".vsg.yaml", "vhdl-style-guide.yml", "vhdl-style-guide.yaml" }, {
+          upward = true, stop = vim.loop.os_homedir(), path = ctx.dirname,
+        })[1]
+        if cfg then
+          table.insert(args, "-c")
+          table.insert(args, cfg)
+        end
+        -- Format current file in-place
+        table.insert(args, ctx.filename)
+        return {
+          command = "vsg",
+          stdin = false,
+          args = args,
         }
       end,
     },

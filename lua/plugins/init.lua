@@ -164,7 +164,10 @@ require("lazy").setup({
   },
   { "numToStr/Comment.nvim", config = true },
   { "windwp/nvim-autopairs", event = "InsertEnter", config = true },
-  { "lewis6991/gitsigns.nvim", config = true },
+  {
+    "lewis6991/gitsigns.nvim",
+    enabled = false, -- disable in this environment to avoid git spawn errors
+  },
   { "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
   -- Safe buffer deletion to avoid closing windows/tabs on close actions
   { "famiu/bufdelete.nvim", lazy = true },
@@ -175,11 +178,11 @@ require("lazy").setup({
 
   -- LSP management
   { "williamboman/mason.nvim", config = true },
-  { "williamboman/mason-lspconfig.nvim", dependencies = { "mason.nvim" } },
+  -- Drop mason-lspconfig to avoid legacy lspconfig framework usage
   { "WhoIsSethDaniel/mason-tool-installer.nvim", dependencies = { "mason.nvim" } },
   {
     "neovim/nvim-lspconfig",
-    dependencies = { "mason.nvim", "mason-lspconfig.nvim" },
+    -- No dependence on mason-lspconfig; we use vim.lsp.config
     config = function()
       require("plugins.lsp").setup()
     end,
@@ -264,6 +267,12 @@ require("lazy").setup({
 
   -- Diagnostics UI
   { "folke/trouble.nvim", opts = { use_diagnostic_signs = true } },
+
+  -- Code outline (symbols sidebar powered by LSP)
+  { "stevearc/aerial.nvim", opts = {} },
+
+  -- Better quickfix window (jumping through compiler/LSP errors)
+  { "kevinhwang91/nvim-bqf", ft = "qf" },
 
   ---------------------------------------------------------------------------
   -- FEDA extras (added without changing existing behavior or keymaps)

@@ -17,12 +17,25 @@ function M.setup_colors()
 end
 
 function M.setup_lualine()
+  local has_git = pcall(vim.fn.system, { "git", "--version" })
   require("lualine").setup({
     options = {
       theme = "catppuccin",
       globalstatus = true,
       section_separators = { left = "", right = "" },
       component_separators = { left = "", right = "" },
+    },
+    sections = {
+      lualine_a = { "mode" },
+      -- Show branch only if git executable is available (avoids jobstart/git calls)
+      lualine_b = {
+        { "branch", cond = function() return has_git end },
+      },
+      lualine_c = { { "filename", path = 1 } },
+      -- Remove the diff component entirely to avoid spawning git jobs in sandboxed envs
+      lualine_x = { "encoding", "fileformat", "filetype" },
+      lualine_y = { "progress" },
+      lualine_z = { "location" },
     },
   })
 end
