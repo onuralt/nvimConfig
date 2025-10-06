@@ -8,3 +8,12 @@ coc-settings.json
 lazy-lock.json
 after
 **/.DS_Store
+\n+# Neovim caches and state (kept out of VCS)
+.cache/
+.state/
+.share/
+
+# Neovim logs and ephemeral files
+.nvimlog
+*.log
+health*.txt
