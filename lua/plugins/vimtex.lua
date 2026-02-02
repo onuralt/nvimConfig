@@ -5,8 +5,21 @@ function M.setup()
   vim.g.mapleader = " "
   vim.g.maplocalleader = "\\"
 
-  -- Viewer: use VimTeX's Okular backend (no "general" wrapper)
-  vim.g.vimtex_view_method = "zathura"
+  -- Workaround: seed VimTeX OS detection cache to avoid empty `uname` result
+  -- In restricted environments, `systemlist('uname')` may return empty,
+  -- causing E684 on indexing. Pre-populate the capture cache with 'Linux'.
+  pcall(function()
+    local ok, res = pcall(vim.fn["vimtex#jobs#cached"], "uname")
+    if not ok or type(res) ~= "table" or #res == 0 then
+      vim.cmd([[call vimtex#cache#open('capture').set('uname', ['Linux'])]])
+    end
+  end)
+
+  -- Avoid duplicate zathura plugin registration from env overrides.
+  vim.env.ZATHURA_PLUGINS_PATH = ""
+
+  -- Viewer: use simple Zathura backend to avoid window-ID/dbus issues
+  vim.g.vimtex_view_method = "zathura_simple"
   vim.g.vimtex_view_automatic = 1
   -- Nuke old "general" settings to avoid conflicts
   vim.g.vimtex_view_general_viewer = nil

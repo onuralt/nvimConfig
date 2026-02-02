@@ -3,6 +3,9 @@ local M = {}
 function M.setup()
   require("conform").setup {
     format_on_save = function(bufnr)
+      if vim.b[bufnr].disable_autoformat then
+        return nil
+      end
       -- Disable for big files
       local max = 500 * 1024
       local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(bufnr))
@@ -10,6 +13,17 @@ function M.setup()
         return nil
       end
       local ft = vim.bo[bufnr].filetype
+      if ft == "tex" or ft == "plaintex" or ft == "bib" then
+        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        for _, line in ipairs(lines) do
+          if line:find("\\begin{svexample") or line:find("\\begin{circuitikz") or line:find("\\begin{tikzpicture") then
+            return nil
+          end
+        end
+        if ft == "tex" or ft == "plaintex" then
+          return nil
+        end
+      end
       -- For VHDL, only format if a formatter is available (no LSP fallback)
       if ft == "vhdl" then
         return { lsp_fallback = false, timeout_ms = 4000 }
@@ -41,7 +55,11 @@ function M.setup()
       css = { "prettierd" },
 
       sh = { "shfmt" },
-      -- LaTeX via texlab/latexindent through LSP fallback
+      -- LaTeX via latexindent (single formatter runs two-pass wrap)
+      tex = { "latexindent_wrap" },
+      plaintex = { "latexindent_wrap" },
+      bib = { "latexindent" },
+      -- LaTeX fallback via texlab when available
       -- Scala/Chisel via Metals (scalafmt) through LSP fallback
     },
 
@@ -78,6 +96,56 @@ function M.setup()
           command = "vsg",
           stdin = false,
           args = args,
+        }
+      end,
+
+      latexindent = function(bufnr)
+        local bufname = vim.api.nvim_buf_get_name(bufnr)
+        -- Search upward for .latexindent.yaml
+        local config_path = vim.fs.find('.latexindent.yaml', {
+          upward = true,
+          path = vim.fn.fnamemodify(bufname, ':h'),
+          type = 'file'
+        })[1]
+
+        local args = { "-m" } -- Enable modifyLineBreaks settings
+        if config_path then
+          table.insert(args, "-l")
+          table.insert(args, config_path)
+        end
+        table.insert(args, "-")
+
+        return {
+          command = "latexindent",
+          stdin = true,
+          args = args,
+        }
+      end,
+
+      latexindent_wrap = function(bufnr)
+        local bufname = vim.api.nvim_buf_get_name(bufnr)
+        local config_path = vim.fs.find('.latexindent.yaml', {
+          upward = true,
+          path = vim.fn.fnamemodify(bufname, ':h'),
+          type = 'file'
+        })[1]
+
+        local cfg = ""
+        if config_path then
+          cfg = "-l " .. vim.fn.shellescape(config_path)
+        end
+        local y = "modifyLineBreaks:textWrapOptions:blocksBeginWith:other:'\\\\\\\\gls'"
+        local cmd = string.format(
+          "latexindent -m %s - | latexindent -m %s -y %s -",
+          cfg,
+          cfg,
+          vim.fn.shellescape(y)
+        )
+
+        return {
+          command = "sh",
+          stdin = true,
+          args = { "-c", cmd },
         }
       end,
     },
