@@ -106,18 +106,14 @@ auc({ "BufRead", "BufNewFile" }, {
   end,
 })
 
--- Hard-wrap TeX on save using Vim's formatter (gq).
+-- Keep svexample blocks formatted on save, but avoid global TeX reflow.
 auc("BufWritePre", {
   pattern = { "*.tex" },
   callback = function()
     if vim.b.disable_autoformat then return end
     if buf_has_svexample(0) then
       format_svexample_blocks(0)
-      return
     end
-    local view = vim.fn.winsaveview()
-    vim.cmd("silent keepjumps normal! gggqG")
-    vim.fn.winrestview(view)
   end,
 })
 

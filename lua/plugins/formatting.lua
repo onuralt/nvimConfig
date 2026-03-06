@@ -20,9 +20,7 @@ function M.setup()
             return nil
           end
         end
-        if ft == "tex" or ft == "plaintex" then
-          return nil
-        end
+        return { lsp_fallback = false, timeout_ms = 4000 }
       end
       -- For VHDL, only format if a formatter is available (no LSP fallback)
       if ft == "vhdl" then
@@ -55,9 +53,9 @@ function M.setup()
       css = { "prettierd" },
 
       sh = { "shfmt" },
-      -- LaTeX via latexindent (single formatter runs two-pass wrap)
-      tex = { "latexindent_wrap" },
-      plaintex = { "latexindent_wrap" },
+      -- LaTeX via latexindent (indent/structure only; avoid line-reflow)
+      tex = { "latexindent" },
+      plaintex = { "latexindent" },
       bib = { "latexindent" },
       -- LaTeX fallback via texlab when available
       -- Scala/Chisel via Metals (scalafmt) through LSP fallback
@@ -108,7 +106,7 @@ function M.setup()
           type = 'file'
         })[1]
 
-        local args = { "-m" } -- Enable modifyLineBreaks settings
+        local args = {}
         if config_path then
           table.insert(args, "-l")
           table.insert(args, config_path)
@@ -122,31 +120,9 @@ function M.setup()
         }
       end,
 
-      latexindent_wrap = function(bufnr)
-        local bufname = vim.api.nvim_buf_get_name(bufnr)
-        local config_path = vim.fs.find('.latexindent.yaml', {
-          upward = true,
-          path = vim.fn.fnamemodify(bufname, ':h'),
-          type = 'file'
-        })[1]
-
-        local cfg = ""
-        if config_path then
-          cfg = "-l " .. vim.fn.shellescape(config_path)
-        end
-        local y = "modifyLineBreaks:textWrapOptions:blocksBeginWith:other:'\\\\\\\\gls'"
-        local cmd = string.format(
-          "latexindent -m %s - | latexindent -m %s -y %s -",
-          cfg,
-          cfg,
-          vim.fn.shellescape(y)
-        )
-
-        return {
-          command = "sh",
-          stdin = true,
-          args = { "-c", cmd },
-        }
+      -- Keep this formatter key unused on purpose; wrapping destroys TeX readability.
+      latexindent_wrap = function()
+        return nil
       end,
     },
   }
